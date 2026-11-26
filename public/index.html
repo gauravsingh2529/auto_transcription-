@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Speech to Text · Real-time Transcription</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%238b5cf6' d='M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z'/%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;500;600&display=swap" />
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <!-- Animated aurora background -->
+  <div class="aurora" aria-hidden="true">
+    <span class="blob b1"></span><span class="blob b2"></span><span class="blob b3"></span>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div>
+      <div>
+        <h1>Speech to Text</h1>
+        <p class="brand-sub">Hindi · English · Hinglish</p>
+      </div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <span class="tab-indicator" aria-hidden="true"></span>
+      <button class="tab active" role="tab" aria-selected="true" data-view="live">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+        Live
+      </button>
+      <button class="tab" role="tab" aria-selected="false" data-view="history">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 3a9 9 0 0 0-9 9H1l3.9 3.9L9 12H6a7 7 0 1 1 2.05 4.95l-1.42 1.42A9 9 0 1 0 13 3Zm-1 5v5l4.25 2.52.77-1.28-3.52-2.09V8H12Z"/></svg>
+        History
+      </button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= LIVE ================= -->
+    <section id="view-live" class="view active" aria-labelledby="live-title">
+      <div class="hero">
+        <h2 id="live-title" class="hero-title">Speak naturally.<br /><span class="gradient-text">We'll write it down.</span></h2>
+        <div class="chips">
+          <span class="chip">⚡ Real-time</span>
+          <span class="chip">🌐 Hindi + English mixed</span>
+          <span class="chip">💾 Auto-saved</span>
+        </div>
+      </div>
+
+      <div class="card live-card">
+        <div class="controls-row">
+          <label class="field">
+            <span>Engine</span>
+            <select id="engine">
+              <option value="gemini">Gemini Live (server)</option>
+              <option value="webspeech">Browser Web Speech</option>
+            </select>
+          </label>
+          <label class="field" id="lang-field" hidden>
+            <span>Language</span>
+            <select id="lang">
+              <option value="hi-IN">Hindi + English (hi-IN)</option>
+              <option value="en-IN">English – India (en-IN)</option>
+              <option value="en-US">English – US (en-US)</option>
+            </select>
+          </label>
+          <div class="field">
+            <span id="autosave-label">Auto-save when I stop speaking</span>
+            <div class="autosave">
+              <label class="switch" title="Stop and save automatically after a pause">
+                <input type="checkbox" id="autosave" role="switch" aria-labelledby="autosave-label" checked />
+                <span class="slider" aria-hidden="true"></span>
+              </label>
+              <select id="silence-ms" aria-label="Silence duration before auto-save">
+                <option value="2000">after 2s</option>
+                <option value="3000" selected>after 3s</option>
+                <option value="5000">after 5s</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="mic-stage" id="mic-stage">
+          <span class="halo" aria-hidden="true"></span>
+          <span class="ring" aria-hidden="true"></span>
+          <span class="ring" aria-hidden="true"></span>
+          <span class="ring" aria-hidden="true"></span>
+          <svg class="countdown" viewBox="0 0 120 120" aria-hidden="true">
+            <circle class="countdown-track" cx="60" cy="60" r="56" pathLength="100" />
+            <circle id="countdown-arc" class="countdown-arc" cx="60" cy="60" r="56" pathLength="100" />
+          </svg>
+          <button id="record" class="record-btn" aria-pressed="false" aria-label="Start recording">
+            <svg class="icon-mic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+            <svg class="icon-stop" viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="3"/></svg>
+          </button>
+        </div>
+
+        <canvas id="viz" class="viz" aria-hidden="true"></canvas>
+
+        <div class="status-row">
+          <span id="status-chip" class="status-chip" data-state="idle">
+            <span class="dot"></span><span id="status" role="status" aria-live="polite">Ready</span>
+          </span>
+          <span id="timer" class="timer">00:00</span>
+        </div>
+
+        <div class="transcript-wrap">
+          <div id="transcript" class="transcript" aria-live="polite" aria-label="Transcript"></div>
+          <div class="transcript-foot">
+            <span id="counts">0 words</span>
+            <span id="langs"></span>
+          </div>
+        </div>
+
+        <div class="actions">
+          <button id="speak-live" class="btn ghost" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 10v4h4l5 5V5L7 10H3Zm13.5 2A4.5 4.5 0 0 0 14 7.97v8.05A4.5 4.5 0 0 0 16.5 12ZM14 3.23v2.06a7 7 0 0 1 0 13.42v2.06a9 9 0 0 0 0-17.54Z"/></svg>
+            Speak
+          </button>
+          <button id="copy-live" class="btn ghost" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>
+            Copy
+          </button>
+          <button id="clear-live" class="btn ghost" disabled>
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+            Clear
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= HISTORY ================= -->
+    <section id="view-history" class="view" aria-labelledby="history-title">
+      <div class="card">
+        <div class="history-head">
+          <div>
+            <h2 id="history-title">Transcription history</h2>
+            <p id="history-sub" class="muted">All your saved sessions</p>
+          </div>
+          <button id="new-btn" class="btn primary">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2Z"/></svg>
+            New
+          </button>
+        </div>
+        <div class="filters">
+          <div class="search">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14Z"/></svg>
+            <input id="search" type="search" placeholder="Search title or text…" aria-label="Search" />
+          </div>
+          <select id="source-filter" aria-label="Filter by source">
+            <option value="">All sources</option>
+            <option value="gemini-live">Gemini Live</option>
+            <option value="web-speech">Web Speech</option>
+            <option value="manual">Manual</option>
+          </select>
+        </div>
+        <ul id="history-list" class="history-list"></ul>
+        <div id="history-empty" class="empty" hidden>
+          <div class="empty-art" aria-hidden="true">
+            <svg viewBox="0 0 24 24"><path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 6 6.92V21h2v-3.08A7 7 0 0 0 19 11h-2Z"/></svg>
+          </div>
+          <h3>Nothing here yet</h3>
+          <p class="muted">Record something from the Live tab, or add a note manually.</p>
+        </div>
+        <div class="pager">
+          <button id="prev" class="btn ghost sm">‹ Prev</button>
+          <span id="page-info"></span>
+          <button id="next" class="btn ghost sm">Next ›</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Create / edit dialog -->
+  <dialog id="editor">
+    <form id="editor-form" method="dialog">
+      <h3 id="editor-title">Edit transcription</h3>
+      <label class="field block"><span>Title</span><input id="f-title" maxlength="200" placeholder="Auto-generated if empty" /></label>
+      <label class="field block"><span>Text</span><textarea id="f-text" rows="8" required maxlength="50000"></textarea></label>
+      <label class="field block"><span>Language</span><input id="f-language" maxlength="64" placeholder="e.g. hi-IN,en-IN" /></label>
+      <p id="editor-error" class="form-error" hidden></p>
+      <div class="dialog-actions">
+        <button type="button" id="editor-cancel" class="btn ghost">Cancel</button>
+        <button type="submit" class="btn primary">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="assertive"></div>
+
+  <script type="module" src="/js/main.js"></script>
+</body>
+</html>
